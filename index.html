@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Design Downloader & Resizer</title>
+
+</head>
+
+<body>
+
+<h2>Design Image Fetcher</h2>
+
+<label for="inputUrl">Enter your URL:</label>
+
+<input type="text" id="inputUrl" style="width: 80%;" placeholder="Paste your URL here" />
+
+<button id="processBtn">Process</button>
+
+<h3>Top Image:</h3>
+
+<canvas id="topCanvas" width="585" height="559" style="border:1px solid #000;"></canvas>
+
+<a id="downloadTop" href="#" download="top.png" style="display:none;">Download Top Image</a>
+
+<h3>Bottom Image:</h3>
+
+<canvas id="bottomCanvas" width="585" height="559" style="border:1px solid #000;"></canvas>
+
+<a id="downloadBottom" href="#" download="bottom.png" style="display:none;">Download Bottom Image</a>
+
+<script>
+
+document.getElementById('processBtn').addEventListener('click', async () => {
+
+    const urlInput = document.getElementById('inputUrl').value;
+
+    try {
+
+        // 1. Extract updateDesign parameter
+
+        const urlObj = new URL(urlInput);
+
+        const updateDesignParam = urlObj.searchParams.get('updateDesign');
+
+        if (!updateDesignParam) {
+
+            alert('No updateDesign parameter found.');
+
+            return;
+
+        }
+
+        // 2. Fetch data from API
+
+        const apiUrl = `https://api.customuse.com/v1/designs/${updateDesignParam}`;
+
+        const response = await fetch(apiUrl);
+
+        const textData = await response.text();
+
+        // 3. Parse for "top" and "bottom"
+
+        const topMatch = textData.match(/"top":\s*"([^"]+)"/);
+
+        const bottomMatch = textData.match(/"bottom":\s*"([^"]+)"/);
+
+        if (!topMatch || !bottomMatch) {
+
+            alert('Could not find top or bottom URLs.');
+
+            return;
+
+        }
+
+        const topImageUrl = topMatch[1];
+
+        const bottomImageUrl = bottomMatch[1];
+
+        // 4. Download and process images
+
+        await processImage(topImageUrl, document.getElementById('topCanvas'), document.getElementById('downloadTop'));
+
+        await processImage(bottomImageUrl, document.getElementById('bottomCanvas'), document.getElementById('downloadBottom'));
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert('Error processing the URL.');
+
+    }
+
+});
+
+async function processImage(imageUrl, canvas, downloadLink) {
+
+    const img = new Image();
+
+    img.crossOrigin = 'Anonymous'; // To avoid CORS issues if server allows
+
+    img.src = imageUrl;
+
+    await new Promise((resolve, reject) => {
+
+        img.onload = resolve;
+
+        img.onerror = reject;
+
+    });
+
+    const ctx = canvas.getContext('2d');
+
+    // Resize and draw
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // Convert to PNG data URL
+
+    const dataURL = canvas.toDataURL('image/png');
+
+    // Set download link
+
+    downloadLink.href = dataURL;
+
+    downloadLink.style.display = 'inline';
+
+    // Optionally, automatically trigger download
+
+    // downloadLink.click();
+
+}
+
+</script>
+
+</body>
+
+</html>
