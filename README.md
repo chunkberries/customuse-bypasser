@@ -6,7 +6,7 @@ Lets you download Customuse designs without needing to pay.
 NOTE: Images here might be different from what's shown right now due to updates, but the website will still function the same way.
 
 1. Select a design, press the three dots, and press edit info.
-2. Copy the link, and paste it into the textbox in the [website](https://chunkberries.github.io/customuse-bypasser/).
+2. Copy the link, and paste it into the textbox in the [website](https://chunkberries.github.io/customuse-bypasser/){:target="_blank"}.
 3. Download your designs.
 
 <img width="1365" height="596" alt="1" src="https://github.com/user-attachments/assets/0c1824b0-71ef-4d5d-9887-b821b7924b11" />
