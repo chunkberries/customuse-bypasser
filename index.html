@@ -110,9 +110,13 @@
     align-items: center;
   }
   
-  .nowrap {
-    white-space: nowrap ;
+  .centered-container {
+    display: flex;             /* Use flexbox */
+    justify-content: center;   /* Center items horizontally */
+    align-items: center;       /* Optional: vertically align items if needed */
+    gap: 0.5em;                /* Optional: space between elements */
   }
+  
   canvas {
     border: 2px solid #ccc;
     border-radius: 4px;
@@ -150,8 +154,10 @@
 </head>
 <body>
 <h1>Customuse Bypasser by chunkberries</h1>
-<h3 class="nowrap">Instructions can be found </h3>
-  <a href="https://github.com/chunkberries/customuse-bypasser/blob/main/README.md", class="nowrap">here</a>
+<div class="centered-container">
+  <h3 class="nowrap">Instructions can be found </h3>
+  <a href="https://github.com/chunkberries/customuse-bypasser/blob/main/README.md" class="nowrap">here</a>
+</div>
 <div class="container">
   <label for="inputUrl">Enter your customuse URL:</label>
   <input type="text" id="inputUrl" placeholder="Paste your URL here" />
