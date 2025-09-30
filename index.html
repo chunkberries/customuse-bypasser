@@ -17,6 +17,11 @@
     color: #333;
   }
 
+  h3 {
+    text-align: center;
+    color: #333;
+  }
+
   .container {
     max-width: 800px;
     margin: 0 auto;
@@ -104,7 +109,10 @@
     flex-direction: column;
     align-items: center;
   }
-
+  
+  .nowrap {
+    white-space: nowrap ;
+  }
   canvas {
     border: 2px solid #ccc;
     border-radius: 4px;
@@ -142,7 +150,8 @@
 </head>
 <body>
 <h1>Customuse Bypasser by chunkberries</h1>
-<h3>Instructions can be found </h3> <a href="https://github.com/chunkberries/customuse-bypasser/blob/main/README.md">here</a>
+<h3 class="nowrap">Instructions can be found </h3>
+  <a href="https://github.com/chunkberries/customuse-bypasser/blob/main/README.md", class="nowrap">here</a>
 <div class="container">
   <label for="inputUrl">Enter your customuse URL:</label>
   <input type="text" id="inputUrl" placeholder="Paste your URL here" />
