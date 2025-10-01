@@ -61,10 +61,10 @@
     display: flex;
     justify-content: center;
     margin-top: 15px;
+    gap: 10px;
   }
 
   button {
-    margin: 0 10px;
     padding: 12px 25px;
     font-size: 1em;
     font-weight: bold;
@@ -76,8 +76,12 @@
     transition: background-color 0.3s;
   }
 
-  button:hover {
+  button:hover:enabled {
     background-color: #0056b3;
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   /* Progress bar style */
@@ -98,7 +102,7 @@
     transition: width 0.4s ease;
   }
 
-  /* Hide images section initially */
+  /* Images section styling */
   .images-section {
     display: none; /* Hidden initially */
     flex-wrap: wrap;
@@ -113,14 +117,14 @@
     flex-direction: column;
     align-items: center;
   }
-  
-  .centered-container {
-    display: flex;             /* Use flexbox */
-    justify-content: center;   /* Center items horizontally */
-    align-items: center;       /* Optional: vertically align items if needed */
-    gap: 0.5em;                /* Optional: space between elements */
+
+  h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.3em;
+    text-align: center;
+    color: #333;
   }
-  
+
   canvas {
     border: 2px solid #ccc;
     border-radius: 4px;
@@ -145,7 +149,7 @@
     background-color: #218838;
   }
 
-  /* Center all buttons and elements */
+  /* Responsive adjustments */
   @media(max-width: 900px) {
     .images-section {
       flex-direction: column;
@@ -158,9 +162,9 @@
 </head>
 <body>
 <h1>Customuse Bypasser by chunkberries</h1>
-<div class="centered-container">
-  <h3 class="nowrap">Instructions can be found </h3>
-  <a href="https://github.com/chunkberries/customuse-bypasser/blob/main/README.md" class="nowrap" target="_blank">here</a>
+<div class="centered-container" style="text-align:center; margin-bottom:20px;">
+  <h3 style="display:inline;">Instructions can be found </h3>
+  <a href="https://github.com/chunkberries/customuse-bypasser/blob/main/README.md" target="_blank" style="margin-left:5px;">here</a>
 </div>
 <div class="container">
   <label for="inputUrl">Enter your customuse URL:</label>
@@ -170,12 +174,17 @@
   <div id="progressContainer">
     <div id="progressBar"></div>
   </div>
+  
+  <!-- Optional spinner (if desired) -->
+  <!--
+  <div class="spinner" id="loadingSpinner"></div>
+  -->
 
   <div class="button-container">
     <button id="processBtn">Fetch Images</button>
   </div>
 
-  <div class="images-section">
+  <div class="images-section" id="imagesSection">
     <div class="image-container">
       <h3>Top Image</h3>
       <canvas id="topCanvas" width="585" height="559"></canvas>
@@ -187,8 +196,6 @@
       <a id="downloadBottom" class="download-link" href="#" download="bottom.png" style="display:none;">Download Bottom Image</a>
     </div>
   </div>
-</div>
-
 </div>
 
 <footer style="text-align: center; margin-top: 40px; font-size: 1em; color: #555;">
@@ -203,117 +210,131 @@ const inputField = document.getElementById('inputUrl');
 const processButton = document.getElementById('processBtn');
 
 async function fetchAndProcess() {
-    resetProgress();
-    showProgress();
+  resetProgress();
+  showProgress();
+  // toggleSpinner(true); // If you want to add spinner
+  disableButton(true);
+  document.querySelector('.images-section').style.display = 'none';
 
-    // Hide images section before starting
-    document.querySelector('.images-section').style.display = 'none';
-
-    const urlInput = inputField.value.trim();
-    if (!urlInput) {
-        hideProgress();
-        alert('Please enter a URL.');
-        return;
+  const urlInput = inputField.value.trim();
+  if (!urlInput) {
+    hideProgress();
+    disableButton(false);
+    alert('Please enter a URL.');
+    return;
+  }
+  try {
+    const urlObj = new URL(urlInput);
+    const updateDesignParam = urlObj.searchParams.get('updateDesign');
+    if (!updateDesignParam) {
+      hideProgress();
+      disableButton(false);
+      alert('No updateDesign parameter found in the URL.');
+      return;
     }
-    try {
-        // Extract updateDesign parameter
-        const urlObj = new URL(urlInput);
-        const updateDesignParam = urlObj.searchParams.get('updateDesign');
-        if (!updateDesignParam) {
-            hideProgress();
-            alert('No updateDesign parameter found in the URL.');
-            return;
-        }
 
-        // Fetch data from API
-        const apiUrl = `https://api.customuse.com/v1/designs/${updateDesignParam}`;
-        await updateProgress(20);
-        const response = await fetch(apiUrl);
-        await updateProgress(40);
-        const textData = await response.text();
+    const apiUrl = `https://api.customuse.com/v1/designs/${updateDesignParam}`;
+    await updateProgress(20);
+    const response = await fetch(apiUrl);
+    await updateProgress(40);
+    const textData = await response.text();
 
-        // Parse for "top" and "bottom"
-        await updateProgress(60);
-        const topMatch = textData.match(/"top":\s*"([^"]+)"/);
-        const bottomMatch = textData.match(/"bottom":\s*"([^"]+)"/);
-        if (!topMatch || !bottomMatch) {
-            hideProgress();
-            alert('Could not find top or bottom image URLs in the API response.');
-            return;
-        }
-        const topImageUrl = topMatch[1];
-        const bottomImageUrl = bottomMatch[1];
+    // Parse for URLs
+    await updateProgress(60);
+    const topMatch = textData.match(/"top":\s*"([^"]+)"/);
+    const bottomMatch = textData.match(/"bottom":\s*"([^"]+)"/);
+    
+    // Clear previous images
+    document.getElementById('downloadTop').style.display = 'none';
+    document.getElementById('downloadBottom').style.display = 'none';
 
-        // Download and process images
-        await processImage(topImageUrl, document.getElementById('topCanvas'), document.getElementById('downloadTop'));
-        await updateProgress(80);
-        await processImage(bottomImageUrl, document.getElementById('bottomCanvas'), document.getElementById('downloadBottom'));
-        await updateProgress(100);
-
-        // Show images section after successful fetch and processing
-        document.querySelector('.images-section').style.display = 'flex';
-
-        hideProgress();
-    } catch (err) {
-        console.error(err);
-        hideProgress();
-        alert('Error processing the URL. Make sure the URL is correct and CORS is supported.');
+    // Process top image if exists
+    if (topMatch && topMatch[1]) {
+      await processImage(topMatch[1], document.getElementById('topCanvas'), document.getElementById('downloadTop'));
+    } else {
+      // Clear canvas if no image
+      const topCanvas = document.getElementById('topCanvas');
+      const ctx = topCanvas.getContext('2d');
+      ctx.clearRect(0, 0, topCanvas.width, topCanvas.height);
+      document.getElementById('downloadTop').style.display = 'none';
     }
+
+    // Process bottom image if exists
+    if (bottomMatch && bottomMatch[1]) {
+      await processImage(bottomMatch[1], document.getElementById('bottomCanvas'), document.getElementById('downloadBottom'));
+    } else {
+      // Clear canvas if no image
+      const bottomCanvas = document.getElementById('bottomCanvas');
+      const ctx = bottomCanvas.getContext('2d');
+      ctx.clearRect(0, 0, bottomCanvas.width, bottomCanvas.height);
+      document.getElementById('downloadBottom').style.display = 'none';
+    }
+
+    // Show images section if at least one image exists
+    if ((topMatch && topMatch[1]) || (bottomMatch && bottomMatch[1])) {
+      document.querySelector('.images-section').style.display = 'flex';
+    }
+
+    hideProgress();
+  } catch (err) {
+    console.error(err);
+    hideProgress();
+    disableButton(false);
+    alert('Error processing the URL. Make sure the URL is correct and CORS is supported.');
+  } finally {
+    disableButton(false);
+  }
 }
 
 async function processImage(imageUrl, canvas, downloadLink) {
-    const img = new Image();
-    img.crossOrigin = 'Anonymous'; // To avoid CORS issues
-    img.src = imageUrl;
-    await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-    });
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    // Convert to PNG data URL
-    const dataURL = canvas.toDataURL('image/png');
-
-    // Set download link
-    downloadLink.href = dataURL;
-    downloadLink.style.display = 'inline-block';
+  const img = new Image();
+  img.crossOrigin = 'Anonymous';
+  img.src = imageUrl;
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+  });
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const dataURL = canvas.toDataURL('image/png');
+  downloadLink.href = dataURL;
+  downloadLink.style.display = 'inline-block';
 }
 
 function showProgress() {
-    progressContainer.style.display = 'block';
-    setProgress(0);
+  progressContainer.style.display = 'block';
+  setProgress(0);
 }
 
 function hideProgress() {
-    progressContainer.style.display = 'none';
-    setProgress(0);
+  progressContainer.style.display = 'none';
+  setProgress(0);
 }
 
 function resetProgress() {
-    setProgress(0);
+  setProgress(0);
 }
 
 function setProgress(percent) {
-    progressBar.style.width = percent + '%';
+  progressBar.style.width = percent + '%';
 }
 
 async function updateProgress(percent) {
-    setProgress(percent);
-    // Add slight delay for smoother animation
-    await new Promise(res => setTimeout(res, 300));
+  setProgress(percent);
+  await new Promise(res => setTimeout(res, 300));
 }
 
-// Trigger fetch on button click
-processButton.addEventListener('click', fetchAndProcess);
+function disableButton(disable) {
+  processButton.disabled = disable;
+}
 
-// Trigger fetch on Enter key press inside the input field
+processButton.addEventListener('click', fetchAndProcess);
 inputField.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault(); // Prevent form submission if inside a form
-        fetchAndProcess();
-    }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    fetchAndProcess();
+  }
 });
 </script>
 </body>
