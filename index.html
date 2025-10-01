@@ -127,6 +127,7 @@
     width: 585px;
     height: 559px;
     background: #fafafa;
+    display: block;
   }
 
   .download-link {
@@ -189,8 +190,6 @@
   </div>
 </div>
 
-</div>
-
 <footer style="text-align: center; margin-top: 40px; font-size: 1em; color: #555;">
   Made with ❤️ by <a href="https://github.com/chunkberries" target="_blank" style="color: #27ADF5; text-decoration: none;">chunkberries</a>
 </footer>
@@ -206,6 +205,7 @@ async function fetchAndProcess() {
     resetProgress();
     showProgress();
 
+    // Hide images section before starting
     document.querySelector('.images-section').style.display = 'none';
 
     const urlInput = inputField.value.trim();
@@ -215,6 +215,7 @@ async function fetchAndProcess() {
         return;
     }
     try {
+        // Extract updateDesign parameter
         const urlObj = new URL(urlInput);
         const updateDesignParam = urlObj.searchParams.get('updateDesign');
         if (!updateDesignParam) {
@@ -223,12 +224,14 @@ async function fetchAndProcess() {
             return;
         }
 
+        // Fetch data from API
         const apiUrl = `https://api.customuse.com/v1/designs/${updateDesignParam}`;
         await updateProgress(20);
         const response = await fetch(apiUrl);
         await updateProgress(40);
         const textData = await response.text();
 
+        // Parse for "top" and "bottom"
         await updateProgress(60);
         const topMatch = textData.match(/"top":\s*"([^"]+)"/);
         const bottomMatch = textData.match(/"bottom":\s*"([^"]+)"/);
@@ -240,14 +243,18 @@ async function fetchAndProcess() {
         const topImageUrl = topMatch[1];
         const bottomImageUrl = bottomMatch[1];
 
+        // Flags to track successful loads
         let topImageLoaded = false;
         let bottomImageLoaded = false;
 
+        // Process top image
         try {
             await processImage(topImageUrl, document.getElementById('topCanvas'), document.getElementById('downloadTop'));
             topImageLoaded = true;
+            document.getElementById('topCanvas').style.display = 'block';
+            document.getElementById('downloadTop').style.display = 'inline-block';
         } catch {
-            // If failed, keep the existing image if any, or hide the canvas
+            // If failed, hide the canvas and download link
             document.getElementById('topCanvas').style.display = 'none';
             document.getElementById('downloadTop').style.display = 'none';
         }
@@ -256,13 +263,22 @@ async function fetchAndProcess() {
         try {
             await processImage(bottomImageUrl, document.getElementById('bottomCanvas'), document.getElementById('downloadBottom'));
             bottomImageLoaded = true;
+            document.getElementById('bottomCanvas').style.display = 'block';
+            document.getElementById('downloadBottom').style.display = 'inline-block';
         } catch {
             document.getElementById('bottomCanvas').style.display = 'none';
             document.getElementById('downloadBottom').style.display = 'none';
         }
 
-        document.querySelector('.images-section').style.display = 'flex';
+        // Show images section if at least one image exists
+        if (topImageLoaded || bottomImageLoaded) {
+            document.querySelector('.images-section').style.display = 'flex';
+        } else {
+            // If no images loaded, keep hidden or show a message if desired
+            alert('No images could be loaded.');
+        }
 
+        // Optional: notify user if images failed
         if (!topImageLoaded) {
             alert('Top image could not be loaded. You can still download the existing image if available.');
         }
@@ -270,7 +286,9 @@ async function fetchAndProcess() {
             alert('Bottom image could not be loaded. You can still download the existing image if available.');
         }
 
+        await updateProgress(100);
         hideProgress();
+
     } catch (err) {
         console.error(err);
         hideProgress();
@@ -287,15 +305,17 @@ async function processImage(imageUrl, canvas, downloadLink) {
         img.onload = resolve;
         img.onerror = reject;
     });
-
+    // Show the canvas in case it was hidden
     canvas.style.display = 'block';
 
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
+    // Convert to PNG data URL
     const dataURL = canvas.toDataURL('image/png');
 
+    // Set download link
     downloadLink.href = dataURL;
     downloadLink.style.display = 'inline-block';
 }
@@ -320,6 +340,7 @@ function setProgress(percent) {
 
 async function updateProgress(percent) {
     setProgress(percent);
+    // Add slight delay for smoother animation
     await new Promise(res => setTimeout(res, 300));
 }
 
