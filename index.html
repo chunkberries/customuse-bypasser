@@ -288,7 +288,7 @@
 
   <div class="input-group">
     <label for="inputUrl">Enter Customuse URL or Design ID</label>
-    <input type="text" id="inputUrl" placeholder="customuse.com/... or ID" autocomplete="off"/>
+    <input type="text" id="inputUrl" placeholder="customuse.com/d/... or ID" autocomplete="off"/>
   </div>
 
   <div class="button-container">
@@ -356,20 +356,29 @@ async function fetchAndProcess() {
 
         const urlObj = new URL(inputVal);
         
-        // Priority 1: Check for 'updateDesign' param
-        const updateDesignParam = urlObj.searchParams.get('updateDesign');
-        
-        // Priority 2: Check for 'report' param
-        const reportParam = urlObj.searchParams.get('report');
+        // Priority 1: Check for '/d/' in the path (e.g. customuse.com/d/123456?query=...)
+        if (urlObj.pathname.includes('/d/')) {
+            const parts = urlObj.pathname.split('/d/');
+            // Get the part after /d/ and before any subsequent slashes (if any exist)
+            if (parts.length > 1) {
+                designId = parts[1].split('/')[0];
+            }
+        }
 
-        if (updateDesignParam) {
-            designId = updateDesignParam;
-        } else if (reportParam) {
-            designId = reportParam;
-        } else {
+        // Priority 2: Check for 'updateDesign' param
+        if (!designId && urlObj.searchParams.get('updateDesign')) {
+            designId = urlObj.searchParams.get('updateDesign');
+        } 
+        
+        // Priority 3: Check for 'report' param
+        if (!designId && urlObj.searchParams.get('report')) {
+            designId = urlObj.searchParams.get('report');
+        }
+
+        if (!designId) {
             hideProgress();
             disableButton(false);
-            alert('Could not find "updateDesign" or "report" parameter in the URL.');
+            alert('Could not find Design ID in the URL. Ensure it contains /d/[id], "updateDesign", or "report".');
             return;
         }
     } else {
