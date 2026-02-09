@@ -288,7 +288,7 @@
 
   <div class="input-group">
     <label for="inputUrl">Enter Customuse URL or Design ID</label>
-    <input type="text" id="inputUrl" placeholder="https://www.customuse.com/..." autocomplete="off"/>
+    <input type="text" id="inputUrl" placeholder="customuse.com/... or ID" autocomplete="off"/>
   </div>
 
   <div class="button-container">
@@ -335,7 +335,7 @@ async function fetchAndProcess() {
   // Brief delay to allow animation reset if re-clicking
   await new Promise(r => setTimeout(r, 200)); 
 
-  const inputVal = inputField.value.trim();
+  let inputVal = inputField.value.trim();
   if (!inputVal) {
     hideProgress();
     disableButton(false);
@@ -346,8 +346,14 @@ async function fetchAndProcess() {
   try {
     let designId = null;
 
-    // Check if input looks like a URL
-    if (inputVal.startsWith('http://') || inputVal.startsWith('https://')) {
+    // Check if input looks like a URL (starts with http, https, OR customuse.com)
+    if (inputVal.startsWith('http://') || inputVal.startsWith('https://') || inputVal.startsWith('customuse.com')) {
+        
+        // If it starts with customuse.com (no protocol), prepend https://
+        if (inputVal.startsWith('customuse.com')) {
+            inputVal = 'https://' + inputVal;
+        }
+
         const urlObj = new URL(inputVal);
         
         // Priority 1: Check for 'updateDesign' param
