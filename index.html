@@ -287,8 +287,8 @@
   </div>
 
   <div class="input-group">
-    <label for="inputUrl">Enter your Customuse URL</label>
-    <input type="text" id="inputUrl" placeholder="https://customuse.com/..." autocomplete="off"/>
+    <label for="inputUrl">Enter Customuse URL or Design ID</label>
+    <input type="text" id="inputUrl" placeholder="URL or ID (e.g. 12345)" autocomplete="off"/>
   </div>
 
   <div class="button-container">
@@ -335,27 +335,50 @@ async function fetchAndProcess() {
   // Brief delay to allow animation reset if re-clicking
   await new Promise(r => setTimeout(r, 200)); 
 
-  const urlInput = inputField.value.trim();
-  if (!urlInput) {
+  const inputVal = inputField.value.trim();
+  if (!inputVal) {
     hideProgress();
     disableButton(false);
-    alert('Please enter a URL.');
+    alert('Please enter a URL or Design ID.');
     return;
   }
   
   try {
-    const urlObj = new URL(urlInput);
-    const updateDesignParam = urlObj.searchParams.get('updateDesign');
-    if (!updateDesignParam) {
-      hideProgress();
-      disableButton(false);
-      alert('No updateDesign parameter found in the URL.');
-      return;
+    let designId = null;
+
+    // Check if input looks like a URL
+    if (inputVal.startsWith('http://') || inputVal.startsWith('https://')) {
+        const urlObj = new URL(inputVal);
+        
+        // Priority 1: Check for 'updateDesign' param
+        const updateDesignParam = urlObj.searchParams.get('updateDesign');
+        
+        // Priority 2: Check for 'report' param
+        const reportParam = urlObj.searchParams.get('report');
+
+        if (updateDesignParam) {
+            designId = updateDesignParam;
+        } else if (reportParam) {
+            designId = reportParam;
+        } else {
+            hideProgress();
+            disableButton(false);
+            alert('Could not find "updateDesign" or "report" parameter in the URL.');
+            return;
+        }
+    } else {
+        // Assume it is a raw Design ID
+        designId = inputVal;
     }
 
-    const apiUrl = `https://api.customuse.com/v1/designs/${updateDesignParam}`;
+    const apiUrl = `https://api.customuse.com/v1/designs/${designId}`;
     await updateProgress(20);
     const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+    }
+
     await updateProgress(50);
     const textData = await response.text();
 
@@ -403,13 +426,14 @@ async function fetchAndProcess() {
         }, 400);
     } else {
         hideProgress();
+        alert('No assets found for this Design ID.');
     }
 
   } catch (err) {
     console.error(err);
     hideProgress();
     disableButton(false);
-    alert('Error processing the URL. Check CORS or URL validity.');
+    alert('Error processing. Please check the ID/URL or CORS settings.');
   } finally {
     disableButton(false);
   }
