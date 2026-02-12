@@ -420,28 +420,34 @@ document.addEventListener('DOMContentLoaded', () => {
 function updateCounter(key, action) {
     const el = key === 'visits' ? document.getElementById('visitCounter') : document.getElementById('useCounter');
     
-    // FIX: Do not use /info. Just use the key to read, or key/up to increment.
-    let url = `${API_BASE}/${NAMESPACE}/${key}`;
+    // 1. Build the original Target URL
+    let targetUrl = `${API_BASE}/${NAMESPACE}/${key}`;
     if (action === 'up') {
-        url += '/up';
+        targetUrl += '/up';
     }
     
-    fetch(url)
+    // 2. Wrap it in a CORS Proxy to bypass the restriction
+    const finalUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+    
+    fetch(finalUrl)
         .then(res => {
-            // If the counter doesn't exist yet, it might error. We handle that below.
             if (!res.ok) throw new Error("Status: " + res.status);
             return res.json();
         })
         .then(data => {
-            if(data && data.count !== undefined) {
-                el.textContent = data.count;
+            // Note: counterapi.dev sometimes returns {count: X} or just {value: X} depending on endpoints
+            // We check for both to be safe
+            const count = data.count !== undefined ? data.count : data.value;
+            
+            if(count !== undefined) {
+                el.textContent = count;
                 el.classList.add('updating');
                 setTimeout(() => el.classList.remove('updating'), 300);
             }
         })
         .catch(err => {
             console.log("Counter info:", err);
-            // FIX: If it's still loading or errored (likely because it's 0/new), show 0.
+            // If it fails, default to 0 so it doesn't look broken
             if(el.textContent === '...') el.textContent = "0";
         });
 }
