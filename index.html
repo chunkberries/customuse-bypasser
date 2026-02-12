@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCounter('visits', 'up');
     
     // 2. Uses: Just READ safely
-    updateCounter('uses', 'read');
+    loadUseCounter();
 });
 
 function updateCounter(key, action) {
@@ -446,7 +446,17 @@ function updateCounter(key, action) {
         });
 }
 
+function loadUseCounter() {
+    const el = document.getElementById('useCounter');
 
+    fetch(`https://api.counterapi.dev/v1/${NAMESPACE}/uses`, { mode: 'no-cors' })
+        .then(() => {
+            el.textContent = '—'; // can't read response safely due to CORS
+        })
+        .catch(() => {
+            el.textContent = '—';
+        });
+}
 
 function switchPage(pageName) {
     document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
