@@ -413,13 +413,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCounter('visits', 'up');
     
     // 2. Uses: Just READ safely
-    getCounter('uses')
+    updateCounter('uses', 'read');
 });
 
 // --- FIXED COUNTER FUNCTION ---
 function updateCounter(key, action) {
     const el = key === 'visits' ? document.getElementById('visitCounter') : document.getElementById('useCounter');
-
+    
+    // FIX: Do not use /info. Just use the key to read, or key/up to increment.
     let url = `${API_BASE}/${NAMESPACE}/${key}`;
     if (action === 'up') {
         url += '/up';
@@ -443,14 +444,6 @@ function updateCounter(key, action) {
             // FIX: If it's still loading or errored (likely because it's 0/new), show 0.
             if(el.textContent === '...') el.textContent = "0";
         });
-}
-
-function getCounter(counterName) {
-  let url = `${API_BASE}/${NAMESPACE}/${counterName}`;
-  return fetch(url)
-    .catch(err => {
-      console.log("Error:", err)
-    })
 }
 
 function switchPage(pageName) {
