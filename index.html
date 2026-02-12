@@ -421,8 +421,7 @@ function updateCounter(key, action) {
         ? document.getElementById('visitCounter') 
         : document.getElementById('useCounter');
 
-    let url = `${API_BASE}/${NAMESPACE}/${key}`;
-    if (action === 'up') url += '/up';
+    let url = `${API_BASE}/${NAMESPACE}/${key}/up`;
 
     fetch(url)
         .then(res => {
@@ -430,7 +429,13 @@ function updateCounter(key, action) {
             return res.json();
         })
         .then(data => {
-            const count = data.count ?? data.value ?? 0;
+            let count = data.count ?? data.value ?? 0;
+
+            // If we're only reading, undo the increment
+            if (action === 'read') count--;
+
+            if (count < 0) count = 0;
+
             el.textContent = count;
             el.classList.add('updating');
             setTimeout(() => el.classList.remove('updating'), 300);
@@ -440,6 +445,7 @@ function updateCounter(key, action) {
             if (el.textContent === '...') el.textContent = '0';
         });
 }
+
 
 
 function switchPage(pageName) {
