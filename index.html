@@ -313,11 +313,6 @@
             <span>Global Visits:</span>
             <span id="visitCounter" class="stat-count">...</span>
         </div>
-        <div class="stat-box" title="Total global uses">
-            <i class="fa-solid fa-bolt"></i>
-            <span>Total Fetches:</span>
-            <span id="useCounter" class="stat-count">...</span>
-        </div>
     </div>
 
     <div class="input-group">
@@ -413,7 +408,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCounter('visits', 'up');
     
     // 2. Uses: Just READ safely
-    loadUseCounter();
 });
 
 function updateCounter(key, action) {
