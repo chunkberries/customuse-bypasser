@@ -416,41 +416,31 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCounter('uses', 'read');
 });
 
-// --- FIXED COUNTER FUNCTION ---
 function updateCounter(key, action) {
-    const el = key === 'visits' ? document.getElementById('visitCounter') : document.getElementById('useCounter');
-    
-    // 1. Build the original Target URL
-    let targetUrl = `${API_BASE}/${NAMESPACE}/${key}`;
-    if (action === 'up') {
-        targetUrl += '/up';
-    }
-    
-    // 2. Wrap it in a CORS Proxy to bypass the restriction
-    const finalUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
-    
-    fetch(finalUrl)
+    const el = key === 'visits' 
+        ? document.getElementById('visitCounter') 
+        : document.getElementById('useCounter');
+
+    let url = `${API_BASE}/${NAMESPACE}/${key}`;
+    if (action === 'up') url += '/up';
+
+    fetch(url)
         .then(res => {
-            if (!res.ok) throw new Error("Status: " + res.status);
+            if (!res.ok) throw new Error(res.status);
             return res.json();
         })
         .then(data => {
-            // Note: counterapi.dev sometimes returns {count: X} or just {value: X} depending on endpoints
-            // We check for both to be safe
-            const count = data.count !== undefined ? data.count : data.value;
-            
-            if(count !== undefined) {
-                el.textContent = count;
-                el.classList.add('updating');
-                setTimeout(() => el.classList.remove('updating'), 300);
-            }
+            const count = data.count ?? data.value ?? 0;
+            el.textContent = count;
+            el.classList.add('updating');
+            setTimeout(() => el.classList.remove('updating'), 300);
         })
         .catch(err => {
-            console.log("Counter info:", err);
-            // If it fails, default to 0 so it doesn't look broken
-            if(el.textContent === '...') el.textContent = "0";
+            console.warn('Counter failed:', err);
+            if (el.textContent === '...') el.textContent = '0';
         });
 }
+
 
 function switchPage(pageName) {
     document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
