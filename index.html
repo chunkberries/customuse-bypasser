@@ -390,8 +390,7 @@
 <script>
 // --- CONFIGURATION ---
 // CHANGE THIS TO SOMETHING UNIQUE! 
-// If you leave it as 'default-namespace', you will share stats with everyone who uses this code.
-const NAMESPACE = 'chunkberries-customusebypasser-v1'; 
+const NAMESPACE = 'customuse-tool-unique-id-123'; 
 const API_BASE = 'https://api.counterapi.dev/v1';
 
 const state = {
@@ -412,18 +411,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- GLOBAL STATS LOGIC ---
     // 1. Increment Visits immediately (Global +1)
-    fetchCounter('visits', 'up');
+    updateCounter('visits', 'up');
     
-    // 2. Just READ the Uses (don't add to it yet)
-    fetchCounter('uses', 'info');
+    // 2. Just READ the Uses immediately (don't increment, just show)
+    updateCounter('uses', 'info');
 });
 
 // Helper function to talk to the free API
-function fetchCounter(key, action) {
+function updateCounter(key, action) {
     // action is either 'up' (add 1) or 'info' (read only)
     const el = key === 'visits' ? document.getElementById('visitCounter') : document.getElementById('useCounter');
     
-    // Endpoint: api.counterapi.dev/v1/{NAMESPACE}/{KEY}/{ACTION}
     const url = `${API_BASE}/${NAMESPACE}/${key}/${action}`;
     
     fetch(url)
@@ -438,7 +436,8 @@ function fetchCounter(key, action) {
         })
         .catch(err => {
             console.error("Counter API Error:", err);
-            el.textContent = "Offline";
+            // If the counter doesn't exist yet (first run), display 0 instead of "Offline"
+            el.textContent = "0"; 
         });
 }
 
@@ -557,8 +556,8 @@ async function fetchAndProcess() {
         bar.style.width = '100%';
         
         if (found) {
-            // --- INCREMENT GLOBAL USES ---
-            fetchCounter('uses', 'up');
+            // --- INCREMENT GLOBAL USES (Successfully fetched) ---
+            updateCounter('uses', 'up');
 
             setTimeout(() => {
                 document.getElementById('progressContainer').style.display = 'none';
