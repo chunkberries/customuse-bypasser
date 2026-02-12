@@ -389,7 +389,7 @@
 
 <script>
 // --- CONFIGURATION ---
-// CHANGE THIS TO SOMETHING UNIQUE! 
+// CHANGE THIS to your unique ID!
 const NAMESPACE = 'customuse-tool-unique-id-123'; 
 const API_BASE = 'https://api.counterapi.dev/v1';
 
@@ -409,25 +409,30 @@ const tutorialSteps = [
 document.addEventListener('DOMContentLoaded', () => {
     if (state.darkMode) document.body.classList.add('dark-mode');
     
-    // --- GLOBAL STATS LOGIC ---
-    // 1. Increment Visits immediately (Global +1)
+    // 1. Visits: Always increment (GO UP)
     updateCounter('visits', 'up');
     
-    // 2. Just READ the Uses immediately (don't increment, just show)
-    updateCounter('uses', 'info');
+    // 2. Uses: Just READ safely
+    updateCounter('uses', 'read');
 });
 
-// Helper function to talk to the free API
+// --- FIXED COUNTER FUNCTION ---
 function updateCounter(key, action) {
-    // action is either 'up' (add 1) or 'info' (read only)
     const el = key === 'visits' ? document.getElementById('visitCounter') : document.getElementById('useCounter');
     
-    const url = `${API_BASE}/${NAMESPACE}/${key}/${action}`;
+    // FIX: Do not use /info. Just use the key to read, or key/up to increment.
+    let url = `${API_BASE}/${NAMESPACE}/${key}`;
+    if (action === 'up') {
+        url += '/up';
+    }
     
     fetch(url)
-        .then(res => res.json())
+        .then(res => {
+            // If the counter doesn't exist yet, it might error. We handle that below.
+            if (!res.ok) throw new Error("Status: " + res.status);
+            return res.json();
+        })
         .then(data => {
-            // The API returns { count: 123 }
             if(data && data.count !== undefined) {
                 el.textContent = data.count;
                 el.classList.add('updating');
@@ -435,9 +440,9 @@ function updateCounter(key, action) {
             }
         })
         .catch(err => {
-            console.error("Counter API Error:", err);
-            // If the counter doesn't exist yet (first run), display 0 instead of "Offline"
-            el.textContent = "0"; 
+            console.log("Counter info:", err);
+            // FIX: If it's still loading or errored (likely because it's 0/new), show 0.
+            if(el.textContent === '...') el.textContent = "0";
         });
 }
 
@@ -556,7 +561,7 @@ async function fetchAndProcess() {
         bar.style.width = '100%';
         
         if (found) {
-            // --- INCREMENT GLOBAL USES (Successfully fetched) ---
+            // --- INCREMENT USES (Go Up) ---
             updateCounter('uses', 'up');
 
             setTimeout(() => {
